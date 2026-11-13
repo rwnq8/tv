@@ -25,16 +25,34 @@ button:hover,button:focus-visible{border-color:var(--acc);outline:none}button.on
 <div id="bar">
 <button data-a="up" aria-label="Channel up">CH +</button><button data-a="down" aria-label="Channel down">CH −</button>
 <button data-a="guide">Guide (G)</button><button data-a="next">Next show</button><button data-a="like" aria-pressed="false">♡ More like this</button>
-<button data-a="skipch">Never this channel</button><button data-a="adfree" aria-pressed="false" title="Hide YouTube, which has ads">Ad-free only</button>
+<button data-a="dislike">👎 Not for me</button><button data-a="skipch">Never this channel</button><button data-a="adfree" aria-pressed="false" title="Hide YouTube, which has ads">Ad-free only</button>
 <button data-a="full">Fullscreen (F)</button><div id="now"></div></div>
 <div id="guide" role="dialog" aria-label="Channel guide"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 var startT=0,nudged=false,CAT=null,S=load(),ch=0,Q=[],qi=-1,ytp=null,ytReady=false,timer=null,hideT=null,tok=0;
-function load(){try{var s=JSON.parse(localStorage.tv||"{}");return{seen:s.seen||[],likes:s.likes||[],ban:s.ban||[],adfree:!!s.adfree,ch:s.ch||0}}catch(e){return{seen:[],likes:[],ban:[],adfree:false,ch:0}}}
+function load(){try{var s=JSON.parse(localStorage.tv||"{}");return{seen:s.seen||[],likes:s.likes||[],ban:s.ban||[],adfree:!!s.adfree,ch:s.ch||0,terms:s.terms||{},src:s.src||{},dis:s.dis||{},limit:s.limit||0}}catch(e){return{seen:[],likes:[],ban:[],adfree:false,ch:0,terms:{},src:{},dis:{},limit:0}}}
 function save(){S.seen=S.seen.slice(-1500);S.likes=S.likes.slice(-200);localStorage.tv=JSON.stringify(S)}
 function $(x){return document.querySelector(x)}function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+// ---- Signals: every viewing is evidence. Watch completion, quick drops, likes and dislikes move per-term and per-source scores that decay with a 30-day half-life; nothing is a fixed keyword list.
+var STOP="the and for with this that from your you are was were what why how who when into about over out not but all can will just more than then them they their its our has have had been being one two new get got make made like best top video official full episode part".split(" ");
+function now(){return Date.now()}
+function decayed(e){return e?e[0]*Math.pow(.5,(now()-e[1])/(30*864e5)):0}
+function bump(m,k,w){m[k]=[decayed(m[k])+w,now()]}
+function toks(t){var w=String(t||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(function(x){return x.length>2&&STOP.indexOf(x)<0}),o=w.slice();for(var i=0;i<w.length-1;i++)o.push(w[i]+" "+w[i+1]);return o}
+function learn(v,w){toks(v.t).forEach(function(t){bump(S.terms,t,w)});bump(S.src,v.b,w*1.5);
+  var ks=Object.keys(S.terms);if(ks.length>600){ks.sort(function(a,b){return Math.abs(decayed(S.terms[a]))-Math.abs(decayed(S.terms[b]))});ks.slice(0,ks.length-500).forEach(function(k){delete S.terms[k]})}save()}
+function scoreV(v){var t=toks(v.t),n=0;t.forEach(function(x){n+=decayed(S.terms[x])});return (t.length?n/Math.sqrt(t.length):0)+decayed(S.src[v.b])}
+var cur=null;
+function finish(){
+  if(!cur)return;var v=cur.v,el=(now()-cur.t0)/1000,c=cur;cur=null;if(c.rated||el<2)return;
+  var d=(v.d||0)-(c.st||0),comp=d>30?Math.min(1,el/d):null;
+  if(comp!==null){if(comp>=.8){learn(v,1);if(S.dis[v.b])S.dis[v.b]=Math.max(0,S.dis[v.b]-1)}else if(comp>=.4)learn(v,.3);else if(comp<.1&&el<25)learn(v,-.8)}
+  else{if(el>600)learn(v,.6);else if(el<20)learn(v,-.8)}
+}
+function topTerms(sign,n){var ks=Object.keys(S.terms).filter(function(k){return k.indexOf(" ")>0||true}).map(function(k){return[k,decayed(S.terms[k])]}).filter(function(x){return sign>0?x[1]>.5:x[1]<-.5});
+  ks.sort(function(a,b){return sign*(b[1]-a[1])});return ks.slice(0,n).map(function(x){return x[0]})}
 function key(v){return v.s+":"+v.i}
 function liked(v){return S.likes.some(function(l){return l.b===v.b})}
 // Queue for a channel: unseen first, liked sources earlier, never the same source twice in a row, banned/ad-free filtered.
@@ -42,7 +60,7 @@ function buildQ(c){
   var pool=c.items.filter(function(v){return S.ban.indexOf(v.b)<0&&!(S.adfree&&v.s==="yt")});
   var fresh=pool.filter(function(v){return S.seen.indexOf(key(v))<0});
   if(fresh.length<5){S.seen=S.seen.filter(function(k){return !pool.some(function(v){return key(v)===k})});save();fresh=pool}
-  var left=shuf(fresh).map(function(v){return{v:v,w:Math.random()*(liked(v)?0.5:1)}}).sort(function(a,b){return a.w-b.w}),out=[],last="";
+  var left=shuf(fresh).map(function(v){return{v:v,w:-(scoreV(v)+Math.random()*1.6)}}).sort(function(a,b){return a.w-b.w}),out=[],last="";
   while(left.length){var at=left.findIndex(function(x){return x.v.b!==last});if(at<0)at=0;var it=left.splice(at,1)[0];out.push(it.v);last=it.v.b}
   return out;
 }
@@ -53,7 +71,7 @@ function tune(n,quiet){
   var c=CAT.channels[(n+CAT.channels.length)%CAT.channels.length];ch=CAT.channels.indexOf(c);S.ch=ch;save();
   if(!quiet)blip();Q=buildQ(c);qi=-1;osd("<b>"+c.n+"</b>"+esc(c.name)+"<small>"+esc(c.blurb)+"</small>",2500);setTimeout(nextShow,quiet?0:250);
 }
-function stop(){tok++;clearTimeout(timer);if(ytp&&ytp.destroy){try{ytp.destroy()}catch(e){}}ytp=null;$("#stage").innerHTML=""}
+function stop(){finish();tok++;clearTimeout(timer);if(ytp&&ytp.destroy){try{ytp.destroy()}catch(e){}}ytp=null;$("#stage").innerHTML=""}
 function nextShow(){
   if(qi+1>=Q.length){Q=buildQ(CAT.channels[ch]);qi=-1}
   if(!Q.length){stop();osd("Nothing on this channel with your filters. Try another.",4000);return}
@@ -69,7 +87,7 @@ function offset(d){return d>900?Math.floor(d*(0.05+Math.random()*0.4)):0}
 function armTimer(remain,my){clearTimeout(timer);if(remain>0)timer=setTimeout(function(){if(my===tok)nextShow()},(remain+4)*1000)}
 function play(v){
   stop();var my=tok,id=encodeURIComponent(v.i),st=offset(v.d),stage=$("#stage");
-  S.seen.push(key(v));save();showUp(v,st?"joined in progress":"");
+  S.seen.push(key(v));save();showUp(v,st?"joined in progress":"");cur={v:v,t0:now(),st:st,rated:false};
   if(v.s==="yt"){
     if(!ytReady){stage.textContent="Loading player…";window._pend=v;return}
     stage.innerHTML="<div id=yt></div>";
@@ -92,14 +110,18 @@ function guide(){
   var g=$("#guide");if(g.classList.contains("on")){g.classList.remove("on");return}
   g.innerHTML="<h2>Guide</h2>"+CAT.channels.map(function(c,i){var nx=c.items.filter(function(v){return S.seen.indexOf(key(v))<0}).length;
     return '<div class="row'+(i===ch?" cur":"")+'" tabindex=0 data-ch="'+i+'"><span class=n>'+c.n+'</span><span><b>'+esc(c.name)+'</b><br><small>'+esc(c.blurb)+'</small></span><span class=nx><small>'+nx+" unseen of "+c.items.length+"</small></span></div>"}).join("");
+  var up=topTerms(1,8),dn=topTerms(-1,6);
+  g.innerHTML+='<h3>What it has learned (fades over time)</h3><p><small>More of: '+(up.length?up.map(esc).join(", "):"nothing yet, keep watching")+'<br>Less of: '+(dn.length?dn.map(esc).join(", "):"nothing yet")+'</small></p>'+
+    (S.ban.length?'<h3>Hidden channels</h3><p>'+S.ban.map(function(b){return '<button data-un="'+esc(b)+'">'+esc(b)+' &times;</button> '}).join("")+'</p>':"");
   g.classList.add("on");
 }
-$("#guide").addEventListener("click",function(e){var r=e.target.closest(".row");if(r){$("#guide").classList.remove("on");tune(+r.dataset.ch)}else if(e.target.id==="guide")$("#guide").classList.remove("on")});
+$("#guide").addEventListener("click",function(e){var u=e.target.dataset.un;if(u){S.ban=S.ban.filter(function(x){return x!==u});S.dis[u]=0;save();$("#guide").classList.remove("on");guide();return}var r=e.target.closest(".row");if(r){$("#guide").classList.remove("on");tune(+r.dataset.ch)}else if(e.target.id==="guide")$("#guide").classList.remove("on")});
 $("#guide").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.dataset.ch){$("#guide").classList.remove("on");tune(+e.target.dataset.ch)}});
 function act(a){
   var v=Q[qi];
   if(a==="up")tune(ch+1);else if(a==="down")tune(ch-1);else if(a==="guide")guide();else if(a==="next"){blip();nextShow()}
-  else if(a==="like"&&v){var at=S.likes.findIndex(function(l){return l.b===v.b});at>=0?S.likes.splice(at,1):S.likes.push({b:v.b});save();showUp(v)}
+  else if(a==="like"&&v){var at=S.likes.findIndex(function(l){return l.b===v.b});if(at>=0)S.likes.splice(at,1);else{S.likes.push({b:v.b});learn(v,2);if(cur)cur.rated=true}save();showUp(v)}
+  else if(a==="dislike"&&v){if(cur)cur.rated=true;learn(v,-2);S.dis[v.b]=(S.dis[v.b]||0)+1;var n=S.dis[v.b];if(n>=3){S.ban.push(v.b);Q=Q.filter(function(x){return x.b!==v.b});qi=Math.min(qi,Q.length-1);osd("Strike 3: "+esc(v.b)+" is off your TV. Restore it from the guide.",4000)}else osd("Noted. Strike "+n+" of 3 for "+esc(v.b)+".",3000);save();blip();nextShow()}
   else if(a==="skipch"&&v){S.ban.push(v.b);save();Q=Q.filter(function(x){return x.b!==v.b});qi=Math.min(qi,Q.length-1);osd("Won't show "+esc(v.b)+" again.",2500);blip();nextShow()}
   else if(a==="adfree"){S.adfree=!S.adfree;save();$("[data-a=adfree]").setAttribute("aria-pressed",S.adfree);tune(ch,true)}
   else if(a==="full"){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
@@ -107,9 +129,10 @@ function act(a){
 $("#bar").addEventListener("click",function(e){var b=e.target.closest("button");if(b)act(b.dataset.a)});
 document.addEventListener("keydown",function(e){var k=e.key;
   if(k==="ArrowUp"||k==="PageUp")act("up");else if(k==="ArrowDown"||k==="PageDown")act("down");else if(k==="ArrowRight")act("next");
-  else if(k==="g"||k==="G")act("guide");else if(k==="f"||k==="F")act("full");else if(k==="l"||k==="L")act("like");else if(k==="Escape")$("#guide").classList.remove("on");
+  else if(k==="g"||k==="G")act("guide");else if(k==="f"||k==="F")act("full");else if(k==="l"||k==="L")act("like");else if(k==="d"||k==="D")act("dislike");else if(k==="Escape")$("#guide").classList.remove("on");
   else if(/^[1-9]$/.test(k)&&+k<=CAT.channels.length)tune(+k-1);wake()});
 function breakCheck(){var lim=S.limit||45;if(!nudged&&Date.now()-startT>lim*60000){nudged=true;osd("<b>&#9201;</b>That is "+lim+" minutes. A good place to stop. Keep watching if you like; this will not ask again.",12000)}}
+addEventListener("pagehide",finish);
 function wake(){var b=$("#bar");b.classList.remove("hide");clearTimeout(hideT);hideT=setTimeout(function(){b.classList.add("hide")},4000)}
 document.addEventListener("mousemove",wake);document.addEventListener("touchstart",wake);
 fetch("catalog.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(c){CAT=c;$("[data-a=adfree]").setAttribute("aria-pressed",S.adfree);var P=new URLSearchParams(location.search),want=c.channels.findIndex(function(x){return x.id===P.get("c")});if(+P.get("limit")>0)S.limit=+P.get("limit");startT=Date.now();tune(want>=0?want:(S.ch<c.channels.length?S.ch:0),true);wake();setInterval(breakCheck,30000)})
