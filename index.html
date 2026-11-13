@@ -74,7 +74,7 @@ function play(v){
     if(!ytReady){stage.textContent="Loading player…";window._pend=v;return}
     stage.innerHTML="<div id=yt></div>";
     ytp=new YT.Player("yt",{videoId:v.i,playerVars:{autoplay:1,rel:0,modestbranding:1,playsinline:1},events:{
-      onReady:function(e){var d=e.target.getDuration();v.d=d||v.d;if(d>900&&Math.random()<.7){e.target.seekTo(Math.floor(d*(0.05+Math.random()*0.4)),true);showUp(v,"joined in progress")}e.target.playVideo()},
+      onReady:function(e){var d=e.target.getDuration();v.d=d||v.d;if(d>0&&d<90&&my===tok){nextShow();return}if(d>900&&Math.random()<.7){e.target.seekTo(Math.floor(d*(0.05+Math.random()*0.4)),true);showUp(v,"joined in progress")}e.target.playVideo()},
       onStateChange:function(e){if(e.data===0&&my===tok)nextShow()},
       onError:function(){if(my===tok)nextShow()}}});
     return;
