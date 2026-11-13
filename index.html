@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TV</title>
+<style>
+:root{--bg:#0b0b0d;--fg:#f2f2f2;--mut:#9a9aa3;--acc:#ffb703;--panel:rgba(12,12,16,.92)}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:var(--fg);font:16px/1.4 system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;background:#000}#stage iframe,#stage #yt{position:absolute;inset:0;width:100%;height:100%;border:0}
+#static{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .15s;background:repeating-radial-gradient(#fff2 0 1px,#0000 1px 3px),#222}
+#static.on{opacity:.9}
+#osd{position:fixed;left:24px;top:20px;padding:10px 16px;background:var(--panel);border-left:4px solid var(--acc);border-radius:4px;opacity:0;transition:opacity .4s;pointer-events:none;max-width:70vw}
+#osd.on{opacity:1}#osd b{font-size:28px;color:var(--acc);margin-right:10px}#osd small{display:block;color:var(--mut);font-size:14px}
+#bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:linear-gradient(#0000,#000d);transition:opacity .3s}
+#bar.hide{opacity:0;pointer-events:none}
+button{min-height:44px;background:#26262c;color:var(--fg);border:1px solid #44444c;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+button:hover,button:focus-visible{border-color:var(--acc);outline:none}button.on,button[aria-pressed=true]{background:var(--acc);color:#111;border-color:var(--acc)}
+#now{flex:1;min-width:220px;color:var(--mut);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#now b{color:var(--fg)}
+#guide{position:fixed;inset:0;background:var(--panel);display:none;overflow:auto;padding:24px}
+#guide.on{display:block}#guide h2{margin:0 0 16px}
+.row{display:grid;grid-template-columns:56px 180px 1fr;gap:12px;align-items:center;padding:12px;border:1px solid #2c2c33;border-radius:8px;margin-bottom:8px;cursor:pointer;min-height:56px}
+.row:hover,.row:focus-visible,.row.cur{border-color:var(--acc);outline:none}.row .n{font-size:24px;color:var(--acc);font-weight:700}.row small{color:var(--mut)}
+@media(max-width:640px){.row{grid-template-columns:44px 1fr}.row .nx{display:none}#osd b{font-size:22px}}
+</style></head><body>
+<div id="stage"></div><div id="static"></div>
+<div id="osd" aria-live="polite"></div>
+<div id="bar">
+<button data-a="up" aria-label="Channel up">CH +</button><button data-a="down" aria-label="Channel down">CH −</button>
+<button data-a="guide">Guide (G)</button><button data-a="next">Next show</button><button data-a="like" aria-pressed="false">♡ More like this</button>
+<button data-a="skipch">Never this channel</button><button data-a="adfree" aria-pressed="false" title="Hide YouTube, which has ads">Ad-free only</button>
+<button data-a="full">Fullscreen (F)</button><div id="now"></div></div>
+<div id="guide" role="dialog" aria-label="Channel guide"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+var CAT=null,S=load(),ch=0,Q=[],qi=-1,ytp=null,ytReady=false,timer=null,hideT=null,tok=0;
+function load(){try{var s=JSON.parse(localStorage.tv||"{}");return{seen:s.seen||[],likes:s.likes||[],ban:s.ban||[],adfree:!!s.adfree,ch:s.ch||0}}catch(e){return{seen:[],likes:[],ban:[],adfree:false,ch:0}}}
+function save(){S.seen=S.seen.slice(-1500);S.likes=S.likes.slice(-200);localStorage.tv=JSON.stringify(S)}
+function $(x){return document.querySelector(x)}function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function key(v){return v.s+":"+v.i}
+function liked(v){return S.likes.some(function(l){return l.b===v.b})}
+// Queue for a channel: unseen first, liked sources earlier, never the same source twice in a row, banned/ad-free filtered.
+function buildQ(c){
+  var pool=c.items.filter(function(v){return S.ban.indexOf(v.b)<0&&!(S.adfree&&v.s==="yt")});
+  var fresh=pool.filter(function(v){return S.seen.indexOf(key(v))<0});
+  if(fresh.length<5){S.seen=S.seen.filter(function(k){return !pool.some(function(v){return key(v)===k})});save();fresh=pool}
+  var left=shuf(fresh).map(function(v){return{v:v,w:Math.random()*(liked(v)?0.5:1)}}).sort(function(a,b){return a.w-b.w}),out=[],last="";
+  while(left.length){var at=left.findIndex(function(x){return x.v.b!==last});if(at<0)at=0;var it=left.splice(at,1)[0];out.push(it.v);last=it.v.b}
+  return out;
+}
+function fmt(d){if(!d)return"";var m=Math.round(d/60);return m>=60?Math.floor(m/60)+"h "+(m%60)+"m":m+" min"}
+function osd(html,ms){var o=$("#osd");o.innerHTML=html;o.classList.add("on");clearTimeout(osd.t);osd.t=setTimeout(function(){o.classList.remove("on")},ms||3500)}
+function blip(){var s=$("#static");s.classList.add("on");setTimeout(function(){s.classList.remove("on")},280)}
+function tune(n,quiet){
+  var c=CAT.channels[(n+CAT.channels.length)%CAT.channels.length];ch=CAT.channels.indexOf(c);S.ch=ch;save();
+  if(!quiet)blip();Q=buildQ(c);qi=-1;osd("<b>"+c.n+"</b>"+esc(c.name)+"<small>"+esc(c.blurb)+"</small>",2500);setTimeout(nextShow,quiet?0:250);
+}
+function stop(){tok++;clearTimeout(timer);if(ytp&&ytp.destroy){try{ytp.destroy()}catch(e){}}ytp=null;$("#stage").innerHTML=""}
+function nextShow(){
+  if(qi+1>=Q.length){Q=buildQ(CAT.channels[ch]);qi=-1}
+  if(!Q.length){stop();osd("Nothing on this channel with your filters. Try another.",4000);return}
+  qi++;play(Q[qi]);
+}
+function showUp(v,note){
+  $("#now").innerHTML="<b>"+esc(v.t)+"</b> · "+esc(v.b)+(v.d?" · "+fmt(v.d):"");
+  liked(v)?$("[data-a=like]").setAttribute("aria-pressed","true"):$("[data-a=like]").setAttribute("aria-pressed","false");
+  var nx=Q[qi+1];osd("<b>"+CAT.channels[ch].n+"</b>"+esc(v.t)+"<small>"+esc(v.b)+(v.d?" · "+fmt(v.d):"")+(note?" · "+note:"")+(nx?" &nbsp;|&nbsp; Up next: "+esc(nx.t):"")+"</small>",5000);
+}
+// Join mid-show like real TV: start 5-45% in when the length is known and the show is long.
+function offset(d){return d>900?Math.floor(d*(0.05+Math.random()*0.4)):0}
+function armTimer(remain,my){clearTimeout(timer);if(remain>0)timer=setTimeout(function(){if(my===tok)nextShow()},(remain+4)*1000)}
+function play(v){
+  stop();var my=tok,id=encodeURIComponent(v.i),st=offset(v.d),stage=$("#stage");
+  S.seen.push(key(v));save();showUp(v,st?"joined in progress":"");
+  if(v.s==="yt"){
+    if(!ytReady){stage.textContent="Loading player…";window._pend=v;return}
+    stage.innerHTML="<div id=yt></div>";
+    ytp=new YT.Player("yt",{videoId:v.i,playerVars:{autoplay:1,rel:0,modestbranding:1,playsinline:1},events:{
+      onReady:function(e){var d=e.target.getDuration();v.d=d||v.d;if(d>900&&Math.random()<.7){e.target.seekTo(Math.floor(d*(0.05+Math.random()*0.4)),true);showUp(v,"joined in progress")}e.target.playVideo()},
+      onStateChange:function(e){if(e.data===0&&my===tok)nextShow()},
+      onError:function(){if(my===tok)nextShow()}}});
+    return;
+  }
+  var u;
+  if(v.s==="vimeo")u="https://player.vimeo.com/video/"+id+"?autoplay=1"+(st?"#t="+st+"s":"");
+  else if(v.s==="ia")u="https://archive.org/embed/"+id+"?autoplay=1";
+  else if(v.s==="dm")u="https://www.dailymotion.com/embed/video/"+id+"?autoplay=1"+(st?"&start="+st:"");
+  else if(v.s==="pt")u=v.i+(v.i.indexOf("?")<0?"?":"&")+"autoplay=1"+(st?"&start="+st+"s":"");
+  stage.innerHTML='<iframe allow="autoplay;fullscreen;picture-in-picture" allowfullscreen referrerpolicy="no-referrer" src="'+esc(u)+'"></iframe>';
+  armTimer(v.d-(v.s==="ia"?0:st),my);
+}
+window.onYouTubeIframeAPIReady=function(){ytReady=true;if(window._pend){var v=window._pend;window._pend=null;play(v)}};
+function guide(){
+  var g=$("#guide");if(g.classList.contains("on")){g.classList.remove("on");return}
+  g.innerHTML="<h2>Guide</h2>"+CAT.channels.map(function(c,i){var nx=c.items.filter(function(v){return S.seen.indexOf(key(v))<0}).length;
+    return '<div class="row'+(i===ch?" cur":"")+'" tabindex=0 data-ch="'+i+'"><span class=n>'+c.n+'</span><span><b>'+esc(c.name)+'</b><br><small>'+esc(c.blurb)+'</small></span><span class=nx><small>'+nx+" unseen of "+c.items.length+"</small></span></div>"}).join("");
+  g.classList.add("on");
+}
+$("#guide").addEventListener("click",function(e){var r=e.target.closest(".row");if(r){$("#guide").classList.remove("on");tune(+r.dataset.ch)}else if(e.target.id==="guide")$("#guide").classList.remove("on")});
+$("#guide").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.dataset.ch){$("#guide").classList.remove("on");tune(+e.target.dataset.ch)}});
+function act(a){
+  var v=Q[qi];
+  if(a==="up")tune(ch+1);else if(a==="down")tune(ch-1);else if(a==="guide")guide();else if(a==="next"){blip();nextShow()}
+  else if(a==="like"&&v){var at=S.likes.findIndex(function(l){return l.b===v.b});at>=0?S.likes.splice(at,1):S.likes.push({b:v.b});save();showUp(v)}
+  else if(a==="skipch"&&v){S.ban.push(v.b);save();Q=Q.filter(function(x){return x.b!==v.b});qi=Math.min(qi,Q.length-1);osd("Won't show "+esc(v.b)+" again.",2500);blip();nextShow()}
+  else if(a==="adfree"){S.adfree=!S.adfree;save();$("[data-a=adfree]").setAttribute("aria-pressed",S.adfree);tune(ch,true)}
+  else if(a==="full"){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
+}
+$("#bar").addEventListener("click",function(e){var b=e.target.closest("button");if(b)act(b.dataset.a)});
+document.addEventListener("keydown",function(e){var k=e.key;
+  if(k==="ArrowUp"||k==="PageUp")act("up");else if(k==="ArrowDown"||k==="PageDown")act("down");else if(k==="ArrowRight")act("next");
+  else if(k==="g"||k==="G")act("guide");else if(k==="f"||k==="F")act("full");else if(k==="l"||k==="L")act("like");else if(k==="Escape")$("#guide").classList.remove("on");
+  else if(/^[1-9]$/.test(k)&&+k<=CAT.channels.length)tune(+k-1);wake()});
+function wake(){var b=$("#bar");b.classList.remove("hide");clearTimeout(hideT);hideT=setTimeout(function(){b.classList.add("hide")},4000)}
+document.addEventListener("mousemove",wake);document.addEventListener("touchstart",wake);
+fetch("catalog.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(c){CAT=c;$("[data-a=adfree]").setAttribute("aria-pressed",S.adfree);tune(S.ch<c.channels.length?S.ch:0,true);wake()})
+.catch(function(){$("#stage").textContent="The guide could not load. Reload to try again."});
+</script></body></html>
