@@ -6,6 +6,11 @@ const dec = s => String(s || "").replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&lt;
 async function get(u) { try { const r = await fetch(u, { headers: UA, signal: AbortSignal.timeout(15000) }); return r.ok ? await r.text() : ""; } catch { return ""; } }
 async function json(u) { try { return JSON.parse(await get(u)); } catch { return {}; } }
 const hms = s => { const p = String(s || "").split(":").map(Number); return p.some(isNaN) ? 0 : p.reduce((a, x) => a * 60 + x, 0); };
+// Curation: only hand-picked channels and archive collections; anything searched (PeerTube) needs a real audience; clickbait titles never enter.
+const BAIT = [/you won'?t believe/i, /\bshocking\b/i, /\bgone wrong\b/i, /!{2,}/, /\?!|!\?/, /\bmust (see|watch)\b/i, /\bwait for it\b/i, /\bmind[- ]?blow/i, /\bbreaking:/i, /\bexposed\b/i, /\bdestroyed\b/i, /\binsane\b/i, /\bnobody (talks|tells)\b/i, /\bthe truth about\b/i, /\bwhat happened next\b/i, /\b(top|best) \d+\b/i, /\bsecrets? (they|doctors|the government)\b/i];
+const caps = t => { const l = t.replace(/[^A-Za-z]/g, ""); return l.length > 8 && l.replace(/[^A-Z]/g, "").length / l.length > 0.6; };
+const emojis = t => /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(t);
+const clean = v => v.t && !BAIT.some(r => r.test(v.t)) && !caps(v.t) && !emojis(v.t);
 const rnd = n => 1 + Math.floor(Math.random() * n);
 const src = {
   async yt(s) { // RSS has no duration; the player reports it at play time (d:0)
@@ -33,7 +38,7 @@ const src = {
   },
   async pt(s) {
     const j = await json("https://sepiasearch.org/api/v1/search/videos?search=" + encodeURIComponent(s.q) + "&count=40&sort=-views&nsfw=false&durationMin=120&durationMax=5400&start=" + Math.floor(Math.random() * 40));
-    return (j.data || []).filter(v => v.embedUrl && !v.isLive).map(v => ({ s: "pt", i: v.embedUrl, t: v.name, b: (v.channel && v.channel.displayName) || s.by, d: v.duration }));
+    return (j.data || []).filter(v => v.embedUrl && !v.isLive && (v.views || 0) >= 20000 && (v.likes || 0) >= 100).map(v => ({ s: "pt", i: v.embedUrl, t: v.name, b: (v.channel && v.channel.displayName) || s.by, d: v.duration }));
   },
   async dm(s) {
     const j = await json("https://api.dailymotion.com/videos?search=" + encodeURIComponent(s.q) + "&fields=id,title,duration,owner.screenname&limit=30&sort=visited-week&family_filter=1&longer_than=2&page=" + rnd(3));
@@ -44,8 +49,8 @@ let prev = {}; try { prev = JSON.parse(fs.readFileSync("catalog.json", "utf8"));
 const cfg = JSON.parse(fs.readFileSync("channels.json", "utf8")), out = { built: new Date().toISOString(), channels: [] }, report = [];
 for (const ch of cfg.channels) {
   const lists = await Promise.all(ch.sources.map(async s => { const r = await src[s.t](s).catch(() => []); report.push(ch.id + "/" + s.by + ": " + r.length); return r; }));
-  const old = ((prev.channels || []).find(c => c.id === ch.id) || {}).items || [], seen = new Set(), items = [];
-  for (const v of [].concat(...lists, old)) { const k = v.s + ":" + v.i; if (!seen.has(k) && v.t) { seen.add(k); items.push(v); } }
+  const old = (((prev.channels || []).find(c => c.id === ch.id) || {}).items || []).filter(v => v.s !== "dm" && v.s !== "pt"), seen = new Set(), items = [];
+  for (const v of [].concat(...lists, old)) { const k = v.s + ":" + v.i; if (!seen.has(k) && clean(v)) { seen.add(k); items.push(v); } }
   const by = {}; items.forEach(v => (by[v.b] = by[v.b] || []).push(v)); // trim round-robin so no source dominates
   const keep = []; for (let more = true; more && keep.length < MAX;) { more = false; for (const k of Object.keys(by)) { const v = by[k].shift(); if (v && keep.length < MAX) { keep.push(v); more = true; } } }
   out.channels.push({ n: ch.n, id: ch.id, name: ch.name, blurb: ch.blurb, items: keep });

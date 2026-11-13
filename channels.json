@@ -1,41 +1,9 @@
 {"channels":[
-{"n":1,"id":"wonder","name":"Wonder","blurb":"Science, space, big ideas","sources":[
- {"t":"yt","id":"UCsXVk37bltHxD1rDPwtNM8Q","by":"Kurzgesagt"},{"t":"yt","id":"UCHnyfMqiRRG1u-2MsSQLbXA","by":"Veritasium"},
- {"t":"yt","id":"UC6nSFpj9HTCZ5t-N3Rm3-HA","by":"Vsauce"},{"t":"yt","id":"UC2C_jShtL725hvbm1arSV9w","by":"CGP Grey"},
- {"t":"yt","id":"UCoxcjq-8xIDTYp3uz647V5A","by":"Numberphile"},{"t":"yt","id":"UCYO_jab_esuFRV4b17AJtAw","by":"3Blue1Brown"},
- {"t":"yt","id":"UC6107grRI4m0o2-emgoDnAA","by":"Smarter Every Day"},{"t":"yt","id":"UCxzC4EngIsMrPmbm6Nxvb-A","by":"Scott Manley"},
- {"t":"pt","q":"science documentary","by":"PeerTube science"},{"t":"dm","q":"science documentary","by":"Dailymotion science"}]},
-{"n":2,"id":"workshop","name":"Workshop","blurb":"Making, engineering, how things work","sources":[
- {"t":"yt","id":"UCY1kMZp36IQSyNx_9h4mpCg","by":"Mark Rober"},{"t":"yt","id":"UCj1VqrHhDte54oLgPG4xpuQ","by":"Stuff Made Here"},
- {"t":"yt","id":"UCMOqf8ab-42UUQIdVoKwjlQ","by":"Practical Engineering"},{"t":"yt","id":"UCy0tKL1T7wFoYcxCe0xjN6Q","by":"Technology Connections"},
- {"t":"yt","id":"UCFhXFikryT4aFcLkLw2LBLA","by":"NileRed"},{"t":"yt","id":"UCAL3JXZSzSm8AlZyD3nQdBA","by":"Primitive Technology"},
- {"t":"yt","id":"UCR1IuLEqb6UEA_zQ81kwXfg","by":"Real Engineering"},{"t":"yt","id":"UC9RM-iSvTu1uPJb8X5yp3EQ","by":"Wendover Productions"},
- {"t":"pt","q":"how things are made","by":"PeerTube making"}]},
-{"n":3,"id":"weird","name":"After Dark","blurb":"Odd, eerie, forgotten","sources":[
- {"t":"yt","id":"UCRcgy6GzDeccI7dkbbBna3Q","by":"LEMMiNO"},{"t":"yt","id":"UCsvn_Po0SmunchJYOWpOxMg","by":"Jacob Geller"},
- {"t":"ia","q":"collection:prelinger AND mediatype:movies","by":"Prelinger Archives"},
- {"t":"ia","q":"collection:classic_tv AND mediatype:movies AND subject:horror","by":"Archive horror"},
- {"t":"pt","q":"mystery unsolved","by":"PeerTube mystery"},{"t":"dm","q":"unsolved mysteries documentary","by":"Dailymotion mystery"}]},
-{"n":4,"id":"comedy","name":"Laughs","blurb":"Cartoons, sketches, silliness","sources":[
- {"t":"yt","id":"UCEOXxzW2vU0P-0THehuIIeg","by":"Captain Disillusion"},{"t":"yt","id":"UCSpFnDQr88xCZ80N-X7t0nQ","by":"Corridor Crew"},
- {"t":"yt","id":"UCnkp4xDOwqqJD7sSM3xdUiQ","by":"Adam Neely"},{"t":"yt","id":"UCBa659QWEk1AI4Tg--mrJ2A","by":"Tom Scott"},
- {"t":"ia","q":"collection:animationandcartoons AND mediatype:movies","by":"Classic Cartoons"},
- {"t":"ia","q":"collection:silent_films AND mediatype:movies AND subject:comedy","by":"Silent comedy"},
- {"t":"dm","q":"stand up comedy","by":"Dailymotion comedy"}]},
-{"n":5,"id":"classics","name":"Movie Night","blurb":"Public-domain features and old TV","sources":[
- {"t":"ia","q":"collection:feature_films AND mediatype:movies","by":"Public-domain films"},
- {"t":"ia","q":"collection:classic_tv AND mediatype:movies","by":"Classic TV"},
- {"t":"ia","q":"collection:silent_films AND mediatype:movies","by":"Silent films"},
- {"t":"ia","q":"collection:SciFi_Horror AND mediatype:movies","by":"Sci-fi and horror classics"}]},
-{"n":6,"id":"retro","name":"Retro Tech","blurb":"Computers then and now","sources":[
- {"t":"ia","q":"collection:computerchronicles AND mediatype:movies","by":"Computer Chronicles"},
- {"t":"yt","id":"UC9-y-6csu5WGm29I7JiwpnA","by":"Computerphile"},{"t":"yt","id":"UCS0N5baNlQWJCUrhCEo8WlA","by":"Ben Eater"},
- {"t":"yt","id":"UCsBjURrPoezykLs9EqgamOA","by":"Fireship"}]},
-{"n":7,"id":"shorts","name":"Short Films","blurb":"Hand-picked shorts and animation","sources":[
- {"t":"vimeo","by":"Vimeo Staff Picks"},{"t":"pt","q":"short film","by":"PeerTube shorts"},{"t":"pt","q":"animation short","by":"PeerTube animation"},
- {"t":"dm","q":"award winning short film","by":"Dailymotion shorts"}]},
-{"n":8,"id":"essays","name":"Think","blurb":"Video essays and long talks","sources":[
- {"t":"yt","id":"UCJkMlOu7faDgqh4PfzbpLdg","by":"Nerdwriter1"},{"t":"yt","id":"UCyNtlmLB73-7gtlBz00XOQQ","by":"Folding Ideas"},
- {"t":"yt","id":"UCuCkxoKLYO_EQ2GeFtbM_bw","by":"Lindybeige"},{"t":"pt","q":"video essay","by":"PeerTube essays"},
- {"t":"dm","q":"video essay","by":"Dailymotion essays"}]}
-]}
+{"n":1,"id":"wonder","name":"Wonder","blurb":"Science, space, big ideas","sources":[{"t":"yt","id":"UCsXVk37bltHxD1rDPwtNM8Q","by":"Kurzgesagt"},{"t":"yt","id":"UCHnyfMqiRRG1u-2MsSQLbXA","by":"Veritasium"},{"t":"yt","id":"UC6nSFpj9HTCZ5t-N3Rm3-HA","by":"Vsauce"},{"t":"yt","id":"UC2C_jShtL725hvbm1arSV9w","by":"CGP Grey"},{"t":"yt","id":"UCoxcjq-8xIDTYp3uz647V5A","by":"Numberphile"},{"t":"yt","id":"UCYO_jab_esuFRV4b17AJtAw","by":"3Blue1Brown"},{"t":"yt","id":"UC6107grRI4m0o2-emgoDnAA","by":"Smarter Every Day"},{"t":"yt","id":"UCxzC4EngIsMrPmbm6Nxvb-A","by":"Scott Manley"}]},
+{"n":2,"id":"workshop","name":"Workshop","blurb":"Making, engineering, how things work","sources":[{"t":"yt","id":"UCY1kMZp36IQSyNx_9h4mpCg","by":"Mark Rober"},{"t":"yt","id":"UCj1VqrHhDte54oLgPG4xpuQ","by":"Stuff Made Here"},{"t":"yt","id":"UCMOqf8ab-42UUQIdVoKwjlQ","by":"Practical Engineering"},{"t":"yt","id":"UCy0tKL1T7wFoYcxCe0xjN6Q","by":"Technology Connections"},{"t":"yt","id":"UCFhXFikryT4aFcLkLw2LBLA","by":"NileRed"},{"t":"yt","id":"UCAL3JXZSzSm8AlZyD3nQdBA","by":"Primitive Technology"},{"t":"yt","id":"UCR1IuLEqb6UEA_zQ81kwXfg","by":"Real Engineering"},{"t":"yt","id":"UC9RM-iSvTu1uPJb8X5yp3EQ","by":"Wendover Productions"}]},
+{"n":3,"id":"weird","name":"After Dark","blurb":"Odd, eerie, forgotten","sources":[{"t":"yt","id":"UCRcgy6GzDeccI7dkbbBna3Q","by":"LEMMiNO"},{"t":"yt","id":"UCsvn_Po0SmunchJYOWpOxMg","by":"Jacob Geller"},{"t":"ia","q":"collection:prelinger AND mediatype:movies","by":"Prelinger Archives"},{"t":"ia","q":"collection:classic_tv AND mediatype:movies AND subject:horror","by":"Archive horror"}]},
+{"n":4,"id":"comedy","name":"Laughs","blurb":"Cartoons, sketches, silliness","sources":[{"t":"yt","id":"UCEOXxzW2vU0P-0THehuIIeg","by":"Captain Disillusion"},{"t":"yt","id":"UCSpFnDQr88xCZ80N-X7t0nQ","by":"Corridor Crew"},{"t":"yt","id":"UCnkp4xDOwqqJD7sSM3xdUiQ","by":"Adam Neely"},{"t":"yt","id":"UCBa659QWEk1AI4Tg--mrJ2A","by":"Tom Scott"},{"t":"ia","q":"collection:animationandcartoons AND mediatype:movies","by":"Classic Cartoons"},{"t":"ia","q":"collection:silent_films AND mediatype:movies AND subject:comedy","by":"Silent comedy"}]},
+{"n":5,"id":"classics","name":"Movie Night","blurb":"Public-domain features and old TV","sources":[{"t":"ia","q":"collection:feature_films AND mediatype:movies","by":"Public-domain films"},{"t":"ia","q":"collection:classic_tv AND mediatype:movies","by":"Classic TV"},{"t":"ia","q":"collection:silent_films AND mediatype:movies","by":"Silent films"},{"t":"ia","q":"collection:SciFi_Horror AND mediatype:movies","by":"Sci-fi and horror classics"}]},
+{"n":6,"id":"retro","name":"Retro Tech","blurb":"Computers then and now","sources":[{"t":"ia","q":"collection:computerchronicles AND mediatype:movies","by":"Computer Chronicles"},{"t":"yt","id":"UC9-y-6csu5WGm29I7JiwpnA","by":"Computerphile"},{"t":"yt","id":"UCS0N5baNlQWJCUrhCEo8WlA","by":"Ben Eater"},{"t":"yt","id":"UCsBjURrPoezykLs9EqgamOA","by":"Fireship"}]},
+{"n":7,"id":"shorts","name":"Short Films","blurb":"Hand-picked shorts and animation","sources":[{"t":"vimeo","by":"Vimeo Staff Picks"},{"t":"ia","q":"collection:animationandcartoons AND mediatype:movies","by":"Animation archive"},{"t":"ia","q":"subject:(short film) AND mediatype:movies AND licenseurl:*creativecommons*","by":"Creative Commons shorts"}]},
+{"n":8,"id":"essays","name":"Think","blurb":"Video essays and long talks","sources":[{"t":"yt","id":"UCJkMlOu7faDgqh4PfzbpLdg","by":"Nerdwriter1"},{"t":"yt","id":"UCyNtlmLB73-7gtlBz00XOQQ","by":"Folding Ideas"},{"t":"yt","id":"UCuCkxoKLYO_EQ2GeFtbM_bw","by":"Lindybeige"},{"t":"ia","q":"collection:opensource_movies AND subject:documentary AND mediatype:movies","by":"Open documentaries"}]}]}

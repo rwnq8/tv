@@ -30,7 +30,7 @@ button:hover,button:focus-visible{border-color:var(--acc);outline:none}button.on
 <div id="guide" role="dialog" aria-label="Channel guide"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-var CAT=null,S=load(),ch=0,Q=[],qi=-1,ytp=null,ytReady=false,timer=null,hideT=null,tok=0;
+var startT=0,nudged=false,CAT=null,S=load(),ch=0,Q=[],qi=-1,ytp=null,ytReady=false,timer=null,hideT=null,tok=0;
 function load(){try{var s=JSON.parse(localStorage.tv||"{}");return{seen:s.seen||[],likes:s.likes||[],ban:s.ban||[],adfree:!!s.adfree,ch:s.ch||0}}catch(e){return{seen:[],likes:[],ban:[],adfree:false,ch:0}}}
 function save(){S.seen=S.seen.slice(-1500);S.likes=S.likes.slice(-200);localStorage.tv=JSON.stringify(S)}
 function $(x){return document.querySelector(x)}function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -109,8 +109,9 @@ document.addEventListener("keydown",function(e){var k=e.key;
   if(k==="ArrowUp"||k==="PageUp")act("up");else if(k==="ArrowDown"||k==="PageDown")act("down");else if(k==="ArrowRight")act("next");
   else if(k==="g"||k==="G")act("guide");else if(k==="f"||k==="F")act("full");else if(k==="l"||k==="L")act("like");else if(k==="Escape")$("#guide").classList.remove("on");
   else if(/^[1-9]$/.test(k)&&+k<=CAT.channels.length)tune(+k-1);wake()});
+function breakCheck(){var lim=S.limit||45;if(!nudged&&Date.now()-startT>lim*60000){nudged=true;osd("<b>&#9201;</b>That is "+lim+" minutes. A good place to stop. Keep watching if you like; this will not ask again.",12000)}}
 function wake(){var b=$("#bar");b.classList.remove("hide");clearTimeout(hideT);hideT=setTimeout(function(){b.classList.add("hide")},4000)}
 document.addEventListener("mousemove",wake);document.addEventListener("touchstart",wake);
-fetch("catalog.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(c){CAT=c;$("[data-a=adfree]").setAttribute("aria-pressed",S.adfree);tune(S.ch<c.channels.length?S.ch:0,true);wake()})
+fetch("catalog.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(c){CAT=c;$("[data-a=adfree]").setAttribute("aria-pressed",S.adfree);var P=new URLSearchParams(location.search),want=c.channels.findIndex(function(x){return x.id===P.get("c")});if(+P.get("limit")>0)S.limit=+P.get("limit");startT=Date.now();tune(want>=0?want:(S.ch<c.channels.length?S.ch:0),true);wake();setInterval(breakCheck,30000)})
 .catch(function(){$("#stage").textContent="The guide could not load. Reload to try again."});
 </script></body></html>
